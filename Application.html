@@ -1,74 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Bandwagon Application</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
-        <style>
-            @import url("style.css");
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            <img src="https://1000logos.net/wp-content/uploads/2017/05/NFL-logo.png" alt="NFL Logo" width="200px" />
-            <h1>OFFICIAL NFL BANDWAGON TRANSFERRAL FORM</h1>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bandwagon Application</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
+    <style>
+        @import url("style.css");
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <ul>
+            <li><a href="Application.html">Application Form</a></li>
+            <li><a href="view-applicants.html">View All Applicants</a></li>
+        </ul>
+    </nav>
+    <div class="header">
+        <img src="https://1000logos.net/wp-content/uploads/2017/05/NFL-logo.png" alt="NFL Logo" width="200px" />
+        <h1>OFFICIAL NFL BANDWAGON TRANSFERRAL FORM</h1>
+    </div>
+
+    <form action="/submitApplication" method="POST">
+        <label><strong>Name: </strong><input type="text" name="name" required /></label><br />
+        <label><strong>Age: </strong><input type="number" name="age" required /></label><br />
+        <label><strong>Date of Birth: </strong><input type="date" name="dob" required /></label><br /><br />
+        <label><strong>Reason for Transfer:</strong></label>
+
+        <div class="radio-group">
+            <label><input type="radio" name="reason" value="A" required /> A. Player Transfer</label>
+            <label><input type="radio" name="reason" value="B" /> B. Team Became Unpopular</label>
+            <label><input type="radio" name="reason" value="C" /> C. Team didn't make the Playoffs</label>
+            <label><input type="radio" name="reason" value="D" /> D. Other: <input type="text"
+                    name="reason_other" /></label>
         </div>
 
-        <form action="/submitApplication" method="POST">
-            <label><strong>Name: </strong><input type="text" name="name" required /></label><br />
-            <label><strong>Age: </strong><input type="number" name="age" required /></label><br />
-            <label><strong>Date of Birth: </strong><input type="date" name="dob" required /></label><br /><br />
-            <label><strong>Reason for Transfer:</strong></label>
+        <label><strong>Last team you were a fan of:</strong>
+            <input class="team" type="text" name="last_team" required />
+        </label><br />
 
-            <div class="radio-group">
-                <label><input type="radio" name="reason" value="A" required /> A. Player Transfer</label>
-                <label><input type="radio" name="reason" value="B" /> B. Team Became Unpopular</label>
-                <label><input type="radio" name="reason" value="C" /> C. Team didn't make the Playoffs</label>
-                <label><input type="radio" name="reason" value="D" /> D. Other: <input type="text" name="reason_other" /></label>
-            </div>
+        <label><strong>Are you a first time Band Wagoner?</strong>
+            <select name="first_time" required>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select><br />
+            If no, please explain below:<br />
+            <textarea id="background" name="background" rows="5" cols="70"></textarea>
+        </label><br />
 
-            <label><strong>Last team you were a fan of:</strong>
-                <input class="team" type="text" name="last_team" required />
-            </label><br />
+        <label><strong>Team Transferring to:</strong>
+            <input class="team" type="text" name="new_team" required />
+        </label><br />
 
-            <label><strong>Are you a first time Band Wagoner?</strong>
-                <select name="first_time" required>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                </select><br />
-                If no, please explain below:<br />
-                <textarea id="background" name="background" rows="5" cols="70"></textarea>
-            </label><br />
+        <label><strong>Length of Commitment:</strong></label>
+        <div class="radio-group">
+            <label><input type="radio" name="length" value="A" required /> A. One Season</label>
+            <label><input type="radio" name="length" value="B" /> B. Length of Player's Contract</label>
+            <label><input type="radio" name="length" value="C" /> C. When Team Loses The Playoffs</label>
+            <label><input type="radio" name="length" value="D" /> D. Not Sure (Unstable)</label>
+        </div><br />
 
-            <label><strong>Team Transferring to:</strong>
-                <input class="team" type="text" name="new_team" required />
-            </label><br />
+        <label><strong>Back Up Team in Case of Emergency:</strong>
+            <input class="team" type="text" name="backup_team" required />
+        </label><br />
 
-            <label><strong>Length of Commitment:</strong></label>
-            <div class="radio-group">
-                <label><input type="radio" name="length" value="A" required /> A. One Season</label>
-                <label><input type="radio" name="length" value="B" /> B. Length of Player's Contract</label>
-                <label><input type="radio" name="length" value="C" /> C. When Team Loses The Playoffs</label>
-                <label><input type="radio" name="length" value="D" /> D. Not Sure (Unstable)</label>
-            </div><br />
+        <label><strong>Commitment Dependent on Championship?:</strong>
+            <select name="championship_dep" required>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </label>
 
-            <label><strong>Back Up Team in Case of Emergency:</strong>
-                <input class="team" type="text" name="backup_team" required />
-            </label><br />
+        <br /><br />
+        <input type="reset" value="Reset" />
+        <input type="submit" value="Submit Application" />
+    </form>
+</body>
 
-            <label><strong>Commitment Dependent on Championship?:</strong>
-                <select name="championship_dep" required>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                </select>
-            </label>
-            
-            <br /><br />
-            <input type="reset" value="Reset" />
-            <input type="submit" value="Submit Application" />
-        </form>
-    </body>
 </html>
