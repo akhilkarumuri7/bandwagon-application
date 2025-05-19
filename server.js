@@ -48,14 +48,51 @@ async function getTeamInfo(teamName) {
             // Use the first NFL team or the first team if no NFL teams found
             const team = nflTeams.length > 0 ? nflTeams[0] : response.data.teams[0];
             console.log("Selected team:", team.strTeam);
-            console.log("Team badge URL:", team.strTeamBadge);
+            console.log("Resolved logo (strTeamBadge):", team.strTeamBadge);
             
             // Simple test image to verify image loading works
             const testImageUrl = "https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/National_Football_League_logo.svg/1200px-National_Football_League_logo.svg.png";
 
+            // Need to do this because the free API doesn't have all the logos
+            const fallbackLogos = {
+                "Arizona Cardinals": "https://r2.thesportsdb.com/images/media/team/badge/xvuwtw1420646838.png",
+                "Atlanta Falcons": "https://r2.thesportsdb.com/images/media/team/badge/rrpvpr1420658174.png",
+                "Baltimore Ravens": "https://r2.thesportsdb.com/images/media/team/badge/einz3p1546172463.png",
+                "Buffalo Bills": "https://r2.thesportsdb.com/images/media/team/badge/6pb37b1515849026.png",
+                "Carolina Panthers": "https://r2.thesportsdb.com/images/media/team/badge/xxyvvy1420940478.png",
+                "Chicago Bears": "https://r2.thesportsdb.com/images/media/team/badge/ji22531698678538.png",
+                "Cincinnati Bengals": "https://r2.thesportsdb.com/images/media/team/badge/qqtwwv1420941670.png",
+                "Cleveland Browns": "https://r2.thesportsdb.com/images/media/team/badge/squvxy1420942389.png",
+                "Dallas Cowboys": "https://r2.thesportsdb.com/images/media/team/badge/wrxssu1450018209.png",
+                "Denver Broncos": "https://r2.thesportsdb.com/images/media/team/badge/upsspx1421635647.png",
+                "Detroit Lions": "https://r2.thesportsdb.com/images/media/team/badge/lgsgkr1546168257.png",
+                "Green Bay Packers": "https://r2.thesportsdb.com/images/media/team/badge/rqpwtr1421434717.png",
+                "Houston Texans": "https://r2.thesportsdb.com/images/media/team/badge/wqyryy1421436627.png",
+                "Indianapolis Colts": "https://r2.thesportsdb.com/images/media/team/badge/wqqvpx1421434058.png",
+                "Jacksonville Jaguars": "https://r2.thesportsdb.com/images/media/team/badge/0mrsd41546427902.png",
+                "Kansas City Chiefs": "https://r2.thesportsdb.com/images/media/team/badge/936t161515847222.png",
+                "Las Vegas Raiders": "https://r2.thesportsdb.com/images/media/team/badge/xqusqy1421724291.png",
+                "Los Angeles Chargers": "https://r2.thesportsdb.com/images/media/team/badge/vrqanp1687734910.png",
+                "Los Angeles Rams": "https://r2.thesportsdb.com/images/media/team/badge/8e8v4i1599764614.png",
+                "Miami Dolphins": "https://r2.thesportsdb.com/images/media/team/badge/trtusv1421435081.png",
+                "Minnesota Vikings": "https://r2.thesportsdb.com/images/media/team/badge/qstqqr1421609163.png",
+                "New England Patriots": "https://r2.thesportsdb.com/images/media/team/badge/xtwxyt1421431860.png",
+                "New Orleans Saints": "https://r2.thesportsdb.com/images/media/team/badge/nd46c71537821337.png",
+                "New York Giants": "https://r2.thesportsdb.com/images/media/team/badge/vxppup1423669459.png",
+                "New York Jets": "https://r2.thesportsdb.com/images/media/team/badge/hz92od1607953467.png",
+                "Philadelphia Eagles": "https://r2.thesportsdb.com/images/media/team/badge/pnpybf1515852421.png",
+                "Pittsburgh Steelers": "https://r2.thesportsdb.com/images/media/team/badge/2975411515853129.png",
+                "San Francisco 49ers": "https://r2.thesportsdb.com/images/media/team/badge/bqbtg61539537328.png",
+                "Seattle Seahawks": "https://r2.thesportsdb.com/images/media/team/badge/wwuqyr1421434817.png",
+                "Tampa Bay Buccaneers": "https://r2.thesportsdb.com/images/media/team/badge/2dfpdl1537820969.png",
+                "Tennessee Titans": "https://r2.thesportsdb.com/images/media/team/badge/m48yia1515847376.png",
+                "Washington Commanders": "https://r2.thesportsdb.com/images/media/team/badge/rn0c7v1643826119.png"
+                };
+
+
             return {
                 name: team.strTeam,
-                logo: testImageUrl, // Use a guaranteed working image for testing
+                logo: team.strTeamBadge || fallbackLogos[team.strTeam] || testImageUrl,
                 badge: team.strTeamBadge, // Keep the original badge URL for reference
                 banner: team.strTeamBanner,
                 founded: team.intFormedYear || "N/A",
@@ -148,6 +185,9 @@ router.post("/submitApplication", async (req, res) => {
 
        // Get the team information from the API
        const teamInfo = await getTeamInfo(new_team);
+       console.log("teamInfo returned:", teamInfo);
+
+       
         
        // Create a readable reason for transfer based on the selection
        let reasonText;
@@ -186,6 +226,7 @@ router.post("/submitApplication", async (req, res) => {
            default:
                lengthText = "Unspecified";
        }
+       
 
        // Send team information to the user
        res.send(`
@@ -318,9 +359,39 @@ router.post("/submitApplication", async (req, res) => {
                        border-radius: 8px;
                        margin-top: 10px;
                    }
+                   .navbar {
+                        padding: 10px 0;
+                    }
+
+                    .navbar ul {
+                        list-style: none;
+                        display: flex;
+                        justify-content: right;
+                        gap: 40px;
+                        margin-right: 0;
+                        padding: 0;
+                    }
+
+                    .navbar li a {
+                        text-decoration: none;
+                        font-size: 18px;
+                        font-weight: 600;
+                        font-family: 'Oswald', sans-serif;
+                        transition: color 0.3s ease;
+                    }
+
+                    .navbar li a:hover {
+                        color: red;
+                    } 
                </style>
            </head>
            <body>
+                <nav class="navbar">
+                    <ul>
+                        <li><a href="Application.html">Application Form</a></li>
+                        <li><a href="view-applicants.html">View All Applicants</a></li>
+                    </ul>
+                </nav>
                <h1>NFL Bandwagon Transferral</h1>
                
                <div class="success-banner">
