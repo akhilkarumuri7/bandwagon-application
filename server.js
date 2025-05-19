@@ -462,8 +462,97 @@ router.post("/submitApplication", async (req, res) => {
 });
 
 // Serve the view-applicants.html file
-router.get("/view-applicants.html", (req, res) => {
-    res.sendFile(path.join(__dirname, "view-applicants.html"));
+router.get("/view-applicants.html", async (req, res) => {
+    try {
+        await client.connect();
+        const database = client.db(dbName);
+        const collection = database.collection(collectionName);
+        const applicants = await collection.find({}).toArray();
+
+        const tableRows = applicants.map(app => {
+            const reason = {
+                A: "Player Transfer",
+                B: "Team Became Unpopular",
+                C: "Team didn't make the Playoffs"
+            }[app.reasonForTransfer] || app.reasonForTransfer;
+
+            const commitment = {
+                A: "One Season",
+                B: "Length of Player's Contract",
+                C: "When Team Loses The Playoffs",
+                D: "Not Sure (Unstable)"
+            }[app.lengthOfCommitment] || app.lengthOfCommitment;
+
+            return `
+                <tr>
+                    <td>${app.name}</td>
+                    <td>${app.age}</td>
+                    <td>${app.lastTeam}</td>
+                    <td>${app.newTeam}</td>
+                    <td>${reason}</td>
+                    <td>${app.firstTimeBandWagoner}</td>
+                    <td>${commitment}</td>
+                    <td>${app.backupTeam}</td>
+                </tr>
+            `;
+        }).join("");
+
+        const tableContent = applicants.length === 0 
+            ? `<p class="text-center">No applicants found in the database.</p>` 
+            : `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th><th>Age</th><th>Last Team</th><th>New Team</th>
+                            <th>Reason</th><th>First-Timer</th><th>Commitment</th><th>Backup Team</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+            `;
+
+        res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>View Bandwagon Applicants</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
+  <style>@import url("style.css");</style>
+</head>
+<body>
+  <nav class="navbar">
+    <ul>
+      <li><a href="Application.html">Application Form</a></li>
+      <li><a href="view-applicants.html">View All Applicants</a></li>
+    </ul>
+  </nav>
+
+  <div class="header">
+    <img src="https://1000logos.net/wp-content/uploads/2017/05/NFL-logo.png" alt="NFL Logo" width="200px" />
+    <h1>NFL BANDWAGON APPLICANTS</h1>
+  </div>
+
+  <div id="applicants-table" style="width: 800px; margin: 0 auto; padding: 20px; border: solid;">
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+      <form method="POST" action="/removeAllApplicants" onsubmit="return confirm('Are you sure you want to remove ALL applications?');">
+        <button class="remove-button">Remove All Applications</button>
+      </form>
+    </div>
+    ${tableContent}
+  </div>
+</body>
+</html>
+        `);
+    } catch (e) {
+        console.error("Error rendering applicants:", e);
+        res.status(500).send("Failed to load applicants page.");
+    } finally {
+        await client.close();
+    }
 });
 
 // API endpoint to get all applications
@@ -482,6 +571,22 @@ router.get("/api/applications", async (req, res) => {
         await client.close();
     }
 });
+
+router.post("/removeAllApplicants", async (req, res) => {
+    try {
+        await client.connect();
+        const database = client.db(dbName);
+        const collection = database.collection(collectionName);
+        await collection.deleteMany({});
+        res.redirect("/view-applicants.html");
+    } catch (e) {
+        console.error("Failed to remove applicants:", e);
+        res.status(500).send("Failed to remove applicants.");
+    } finally {
+        await client.close();
+    }
+});
+
 
 // API endpoint to remove all applications
 router.delete("/api/applications/removeAll", async (req, res) => {
