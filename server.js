@@ -30,31 +30,27 @@ router.get("/", (req, res) => {
 
 async function getTeamInfo(teamName) {
     try {
-        const apiKey = process.env.SPORTS_API || "3"; // Using your API key from .env
-        // Properly encode the team name for the URL
+        const apiKey = process.env.SPORTS_API || "3"; 
         const encodedTeamName = encodeURIComponent(teamName);
         const url = `https://www.thesportsdb.com/api/v1/json/${apiKey}/searchteams.php?t=${encodedTeamName}`;
         
         console.log(`Fetching team info from: ${url}`);
         const response = await axios.get(url);
-        
+        //don't need some of the filtering logic because we have a dropdown now, but still good to have incase API fails
         if (response.data && response.data.teams && response.data.teams.length > 0) {
-            // Filter for NFL teams (filter by league if there are multiple results)
             const nflTeams = response.data.teams.filter(team => 
                 team.strLeague === "NFL" || 
                 team.strLeague === "National Football League" ||
                 team.strSport === "American Football"
             );
             
-            // Use the first NFL team or the first team if no NFL teams found
             const team = nflTeams.length > 0 ? nflTeams[0] : response.data.teams[0];
             console.log("Selected team:", team.strTeam);
             console.log("Resolved logo (strTeamBadge):", team.strTeamBadge);
             
-            // Simple test image to verify image loading works
             const testImageUrl = "https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/National_Football_League_logo.svg/1200px-National_Football_League_logo.svg.png";
 
-            // Need to do this because the free API doesn't have all the logos
+            //need to do this because the free API doesn't have all the logos
             const fallbackLogos = {
                 "Arizona Cardinals": "https://r2.thesportsdb.com/images/media/team/badge/xvuwtw1420646838.png",
                 "Atlanta Falcons": "https://r2.thesportsdb.com/images/media/team/badge/rrpvpr1420658174.png",
@@ -94,7 +90,7 @@ async function getTeamInfo(teamName) {
             return {
                 name: team.strTeam,
                 logo: team.strTeamBadge || fallbackLogos[team.strTeam] || testImageUrl,
-                badge: team.strTeamBadge, // Keep the original badge URL for reference
+                badge: team.strTeamBadge, 
                 banner: team.strTeamBanner,
                 founded: team.intFormedYear || "N/A",
                 stadium: team.strStadium || "N/A",
@@ -108,7 +104,6 @@ async function getTeamInfo(teamName) {
             };
         } else {
             console.log("No teams found, using mock data for:", teamName);
-            // Return default info if team not found
             return getMockTeamInfo(teamName);
         }
     } catch (error) {
@@ -118,7 +113,7 @@ async function getTeamInfo(teamName) {
     }
 }
 
-// Fallback function with mock data if API is not working
+//fallback function with mock data if API isn't working
 function getMockTeamInfo(teamName) {
     return {
         name: teamName,
@@ -137,8 +132,7 @@ function getMockTeamInfo(teamName) {
     };
 }
 
-
-// Form submission route
+//form submission route
 router.post("/submitApplication", async (req, res) => {
     console.log("Form submission received:", req.body);
     const { 
@@ -162,7 +156,7 @@ router.post("/submitApplication", async (req, res) => {
         const database = client.db(dbName);
         const collection = database.collection(collectionName);
         
-        // Create the fan document
+        //create fan document
         const fan = {
             name,
             age: Number(age),
@@ -180,17 +174,14 @@ router.post("/submitApplication", async (req, res) => {
         
         console.log("Inserting document:", fan);
         
-        // Insert the document into MongoDB
+        //insert document into mongodb
         const result = await collection.insertOne(fan);
         console.log("Document inserted with ID:", result.insertedId);
 
-       // Get the team information from the API
+       //get  team info from API
        const teamInfo = await getTeamInfo(new_team);
        console.log("teamInfo returned:", teamInfo);
 
-       
-        
-       // Create a readable reason for transfer based on the selection
        let reasonText;
        switch(reason) {
            case 'A':
@@ -208,8 +199,7 @@ router.post("/submitApplication", async (req, res) => {
            default:
                reasonText = "Other";
        }
-       
-       // Create a readable length of commitment based on the selection
+    
        let lengthText;
        switch(length) {
            case 'A':
@@ -229,7 +219,7 @@ router.post("/submitApplication", async (req, res) => {
        }
        
 
-       // Send team information to the user
+       //send team info to user
        res.send(`
            <html>
            <head>
@@ -461,12 +451,12 @@ router.post("/submitApplication", async (req, res) => {
    }
 });
 
-// Serve the view-applicants.html file
+// view-applicants.html file
 router.get("/view-applicants.html", (req, res) => {
     res.sendFile(path.join(__dirname, "view-applicants.html"));
 });
 
-// API endpoint to get all applications
+//API endpoint to get all applications
 router.get("/api/applications", async (req, res) => {
     try {
         await client.connect();
@@ -483,17 +473,14 @@ router.get("/api/applications", async (req, res) => {
     }
 });
 
-// API endpoint to remove all applications
+//API endpoint to remove all applications
 router.delete("/api/applications/removeAll", async (req, res) => {
     try {
       await client.connect();
       const database = client.db(dbName);
       const collection = database.collection(collectionName);
-      
-      // Count documents before deletion to return in response
+
       const count = await collection.countDocuments({});
-      
-      // Delete all documents
       const result = await collection.deleteMany({});
       
       res.json({ 
@@ -513,15 +500,12 @@ router.delete("/api/applications/removeAll", async (req, res) => {
   });
 
   
-// Add a simple status endpoint
 router.get("/status", (req, res) => {
     res.json({ status: "Server is running", time: new Date() });
 });
 
-// Mount the router on the app
 app.use('/', router);
 
-// Start server
 app.listen(PORT, () => {
     console.log(`listening on port ${PORT}`);
 });

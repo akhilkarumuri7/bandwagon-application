@@ -30,7 +30,6 @@
       <p id="loading-message" class="text-center">Loading applicants data...</p>
     </div>
 
-    <!-- Confirmation Dialog -->
     <div id="confirmDialog" class="confirm-dialog" style="display: none;">
       <div class="confirm-content">
         <h2>Confirm Deletion</h2>
@@ -43,16 +42,13 @@
     </div>
 
     <script>
-      // Fetch applicants data from the server when page loads
       document.addEventListener('DOMContentLoaded', function() {
         fetchApplicants();
 
-        // Add event listener for the remove all button
         document.getElementById('removeAllButton').addEventListener('click', function() {
           document.getElementById('confirmDialog').style.display = 'flex';
         });
 
-        // Add event listeners for confirmation dialog
         document.getElementById('confirmYes').addEventListener('click', function() {
           removeAllApplicants();
           document.getElementById('confirmDialog').style.display = 'none';
@@ -63,7 +59,6 @@
         });
       });
 
-      // Function to fetch applicants
       function fetchApplicants() {
         fetch('/api/applications')
           .then(response => {
@@ -83,14 +78,12 @@
               '</div>' +
               '<p class="text-center">Error loading applicants data. Please try again later.</p>';
             
-            // Reattach event listener if the button was recreated
             document.getElementById('removeAllButton').addEventListener('click', function() {
               document.getElementById('confirmDialog').style.display = 'flex';
             });
           });
       }
 
-      // Function to remove all applicants
       function removeAllApplicants() {
         fetch('/api/applications/removeAll', {
           method: 'DELETE'
@@ -102,7 +95,6 @@
           return response.json();
         })
         .then(data => {
-          // Show success message and refresh the table (which will now be empty)
           alert(`Successfully removed ${data.count} applications`);
           fetchApplicants();
         })
@@ -112,11 +104,9 @@
         });
       }
 
-      // Function to display applicants in a table
       function displayApplicants(applicants) {
         const tableContainer = document.getElementById('applicants-table');
         
-        // Always include the remove button
         let content = `
           <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
             <button id="removeAllButton" class="remove-button">Remove All Applications</button>
@@ -127,14 +117,12 @@
           content += '<p class="text-center">No applicants found in the database.</p>';
           tableContainer.innerHTML = content;
           
-          // Reattach event listener if the button was recreated
           document.getElementById('removeAllButton').addEventListener('click', function() {
             document.getElementById('confirmDialog').style.display = 'flex';
           });
           return;
         }
         
-        // Create table structure
         content += `<table>
             <thead>
               <tr>
@@ -151,9 +139,7 @@
             <tbody>
         `;
         
-        // Add rows for each applicant
         applicants.forEach(app => {
-          // Determine commitment text based on value
           let commitment = "";
           switch(app.lengthOfCommitment) {
             case "A": commitment = "One Season"; break;
@@ -163,7 +149,6 @@
             default: commitment = app.lengthOfCommitment;
           }
           
-          // Determine reason text based on value
           let reason = "";
           switch(app.reasonForTransfer) {
             case "A": reason = "Player Transfer"; break;
@@ -193,7 +178,6 @@
         
         tableContainer.innerHTML = content;
         
-        // Reattach event listener if the button was recreated
         document.getElementById('removeAllButton').addEventListener('click', function() {
         document.getElementById('confirmDialog').style.display = 'flex';
         });
