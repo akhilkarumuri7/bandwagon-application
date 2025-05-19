@@ -4,6 +4,7 @@ const axios = require('axios');
 const app = express();
 const PORT = Number(process.env.PORT); 
 
+//blocked our for render.com
 // require("dotenv").config({
 //     path: path.resolve(__dirname, "credentials/.env"),
 // });
@@ -14,6 +15,7 @@ app.use(express.static(__dirname));
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended:false}));
 
+//db environment variables 
 const username = process.env.MONGO_DB_USERNAME;
 const password = process.env.MONGO_DB_PASSWORD;
 const dbName = process.env.MONGO_DB_NAME;
@@ -22,6 +24,7 @@ const uri = process.env.MONGO_CONNECTION_STRING;
 const client = new MongoClient(uri, { serverApi: ServerApiVersion.v1 });
 
 const router = express.Router();
+app.use('/', router);
 
 router.get("/", (req, res) => {
     console.log("Serving Application.html");
@@ -30,31 +33,30 @@ router.get("/", (req, res) => {
 
 async function getTeamInfo(teamName) {
     try {
-        const apiKey = process.env.SPORTS_API || "3"; // Using your API key from .env
-        // Properly encode the team name for the URL
+        const apiKey = process.env.SPORTS_API || "3";
         const encodedTeamName = encodeURIComponent(teamName);
         const url = `https://www.thesportsdb.com/api/v1/json/${apiKey}/searchteams.php?t=${encodedTeamName}`;
         
         console.log(`Fetching team info from: ${url}`);
         const response = await axios.get(url);
         
+        //filtering for nfl teams
+        //now we implemented a drop down for the teams, so we techincally don't need some of the filtering strings, 
+        //but still good to keep incase API error
         if (response.data && response.data.teams && response.data.teams.length > 0) {
-            // Filter for NFL teams (filter by league if there are multiple results)
             const nflTeams = response.data.teams.filter(team => 
                 team.strLeague === "NFL" || 
                 team.strLeague === "National Football League" ||
                 team.strSport === "American Football"
             );
             
-            // Use the first NFL team or the first team if no NFL teams found
             const team = nflTeams.length > 0 ? nflTeams[0] : response.data.teams[0];
             console.log("Selected team:", team.strTeam);
             console.log("Resolved logo (strTeamBadge):", team.strTeamBadge);
             
-            // Simple test image to verify image loading works
             const testImageUrl = "https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/National_Football_League_logo.svg/1200px-National_Football_League_logo.svg.png";
 
-            // Need to do this because the free API doesn't have all the logos
+            //need to do this because the free API doesn't have all the logos
             const fallbackLogos = {
                 "Arizona Cardinals": "https://r2.thesportsdb.com/images/media/team/badge/xvuwtw1420646838.png",
                 "Atlanta Falcons": "https://r2.thesportsdb.com/images/media/team/badge/rrpvpr1420658174.png",
@@ -94,7 +96,7 @@ async function getTeamInfo(teamName) {
             return {
                 name: team.strTeam,
                 logo: team.strTeamBadge || fallbackLogos[team.strTeam] || testImageUrl,
-                badge: team.strTeamBadge, // Keep the original badge URL for reference
+                badge: team.strTeamBadge,
                 banner: team.strTeamBanner,
                 founded: team.intFormedYear || "N/A",
                 stadium: team.strStadium || "N/A",
@@ -108,7 +110,8 @@ async function getTeamInfo(teamName) {
             };
         } else {
             console.log("No teams found, using mock data for:", teamName);
-            // Return default info if team not found
+            //return default info if team not found
+            //now we implemented a drop down for the teams, so we techincally don't need this
             return getMockTeamInfo(teamName);
         }
     } catch (error) {
@@ -118,7 +121,7 @@ async function getTeamInfo(teamName) {
     }
 }
 
-// Fallback function with mock data if API is not working
+//fallback function with mock data if API is not working
 function getMockTeamInfo(teamName) {
     return {
         name: teamName,
@@ -138,7 +141,7 @@ function getMockTeamInfo(teamName) {
 }
 
 
-// Form submission route
+//form submission route
 router.post("/submitApplication", async (req, res) => {
     console.log("Form submission received:", req.body);
     const { 
@@ -162,7 +165,7 @@ router.post("/submitApplication", async (req, res) => {
         const database = client.db(dbName);
         const collection = database.collection(collectionName);
         
-        // Create the fan document
+        //create the fan document
         const fan = {
             name,
             age: Number(age),
@@ -180,17 +183,14 @@ router.post("/submitApplication", async (req, res) => {
         
         console.log("Inserting document:", fan);
         
-        // Insert the document into MongoDB
+        //insert document into mongodb
         const result = await collection.insertOne(fan);
         console.log("Document inserted with ID:", result.insertedId);
 
-       // Get the team information from the API
+       //get team info from API
        const teamInfo = await getTeamInfo(new_team);
        console.log("teamInfo returned:", teamInfo);
 
-       
-        
-       // Create a readable reason for transfer based on the selection
        let reasonText;
        switch(reason) {
            case 'A':
@@ -209,7 +209,7 @@ router.post("/submitApplication", async (req, res) => {
                reasonText = "Other";
        }
        
-       // Create a readable length of commitment based on the selection
+       
        let lengthText;
        switch(length) {
            case 'A':
@@ -229,7 +229,7 @@ router.post("/submitApplication", async (req, res) => {
        }
        
 
-       // Send team information to the user
+       //send team information to the user, main information about the team that the fan sees!
        res.send(`
            <html>
            <head>
@@ -461,12 +461,12 @@ router.post("/submitApplication", async (req, res) => {
    }
 });
 
-// Serve the view-applicants.html file
+//view-applicants.html file
 router.get("/view-applicants.html", (req, res) => {
     res.sendFile(path.join(__dirname, "view-applicants.html"));
 });
 
-// API endpoint to get all applications
+//API endpoint for all applications
 router.get("/api/applications", async (req, res) => {
     try {
         await client.connect();
@@ -483,17 +483,14 @@ router.get("/api/applications", async (req, res) => {
     }
 });
 
-// API endpoint to remove all applications
+//API endpoint to remove all applications
 router.delete("/api/applications/removeAll", async (req, res) => {
     try {
       await client.connect();
       const database = client.db(dbName);
       const collection = database.collection(collectionName);
       
-      // Count documents before deletion to return in response
       const count = await collection.countDocuments({});
-      
-      // Delete all documents
       const result = await collection.deleteMany({});
       
       res.json({ 
@@ -512,16 +509,114 @@ router.delete("/api/applications/removeAll", async (req, res) => {
     }
   });
 
+  router.post("/removeAllApplications", async (req, res) => {
+    try {
+      await client.connect();
+      const col = client.db(dbName).collection(collectionName);
+      await col.deleteMany({});
+    } catch (e) {
+      console.error("Failed to delete all applications:", e);
+    } finally {
+      await client.close();
+    }
+    // Redirect back to the listing page
+    res.redirect("/view-applicants.html");
+  });
   
-// Add a simple status endpoint
+  router.get("/view-applicants.html", async (req, res) => {
+    let applications = [];
+    try {
+      await client.connect();
+      const col = client.db(dbName).collection(collectionName);
+      applications = await col
+        .find({})
+        .sort({ submissionDate: -1 })
+        .toArray();
+    } catch (e) {
+      console.error("Error fetching applications:", e);
+    } finally {
+      await client.close();
+    }
+  
+    // Build the table rows
+    const reasonMap = { A: "Player Transfer", B: "Team Became Unpopular", C: "Team didn't make the Playoffs" };
+    const lengthMap = {
+      A: "One Season",
+      B: "Length of Player's Contract",
+      C: "When Team Loses The Playoffs",
+      D: "Not Sure (Unstable)"
+    };
+  
+    const rows = applications.map(app => `
+      <tr>
+        <td>${app.name}</td>
+        <td>${app.age}</td>
+        <td>${app.lastTeam}</td>
+        <td>${app.newTeam}</td>
+        <td>${reasonMap[app.reasonForTransfer] || app.reasonForTransfer}</td>
+        <td>${app.firstTimeBandWagoner}</td>
+        <td>${lengthMap[app.lengthOfCommitment] || app.lengthOfCommitment}</td>
+        <td>${app.backupTeam}</td>
+      </tr>
+    `).join("") || `
+      <tr>
+        <td colspan="8" style="text-align:center;">No applicants found</td>
+      </tr>
+    `;
+  
+    // Send the fully-rendered HTML page
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" />
+        <title>View Bandwagon Applicants</title>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap"
+          rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css" />
+        <style>
+          /* Inline table styles (you can move these into style.css) */
+          table { width:100%; border-collapse:collapse; margin-top:20px; }
+          th,td { padding:10px; border:1px solid #ccc; text-align:left; }
+          th { background:#013369; color:#fff }
+          tr:nth-child(even){ background:#f9f9f9 }
+        </style>
+      </head>
+      <body>
+        <nav class="navbar">
+          <ul>
+            <li><a href="/">Application Form</a></li>
+            <li><a href="/view-applicants.html">View All Applicants</a></li>
+          </ul>
+        </nav>
+        <h1>NFL BANDWAGON APPLICANTS</h1>
+  
+        <form class="remove-form" action="/removeAllApplications" method="POST">
+          <button type="submit" class="remove-button">Remove All Applications</button>
+        </form>
+  
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th><th>Age</th><th>Last Team</th><th>New Team</th>
+              <th>Reason</th><th>First-Timer</th><th>Commitment</th><th>Backup Team</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `);
+  });
+
 router.get("/status", (req, res) => {
     res.json({ status: "Server is running", time: new Date() });
 });
 
-// Mount the router on the app
-app.use('/', router);
-
-// Start server
 app.listen(PORT, () => {
     console.log(`listening on port ${PORT}`);
 });

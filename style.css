@@ -88,9 +88,8 @@ textarea {
     color: red;
 }
 
-/* New styles for the Remove All button and confirmation dialog */
 .remove-button {
-    background-color: #D50A0A; /* NFL red */
+    background-color: #D50A0A; 
     color: white;
     padding: 10px 20px;
     border: none;
@@ -165,7 +164,6 @@ textarea {
     background-color: #002347;
   }
   
-  /* Table styling for applicants table */
   table {
     width: 100%;
     border-collapse: collapse;
@@ -180,7 +178,7 @@ textarea {
   }
   
   th {
-    background-color: #013369; /* NFL blue */
+    background-color: #013369; 
     color: white;
     font-weight: bold;
   }
@@ -193,7 +191,6 @@ textarea {
     background-color: #f1f1f1;
   }
   
-  /* General utility classes */
   .text-center {
     text-align: center;
   }

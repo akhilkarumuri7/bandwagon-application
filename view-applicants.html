@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -30,7 +30,6 @@
       <p id="loading-message" class="text-center">Loading applicants data...</p>
     </div>
 
-    <!-- Confirmation Dialog -->
     <div id="confirmDialog" class="confirm-dialog" style="display: none;">
       <div class="confirm-content">
         <h2>Confirm Deletion</h2>
@@ -41,12 +40,11 @@
         </div>
       </div>
     </div>
+    
 
     <script>
-      // Fetch applicants data from the server when page loads
       document.addEventListener('DOMContentLoaded', function() {
         fetchApplicants();
-
         // Add event listener for the remove all button
         document.getElementById('removeAllButton').addEventListener('click', function() {
           document.getElementById('confirmDialog').style.display = 'flex';
@@ -199,5 +197,46 @@
         });
       }
     </script>
+  </body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>View Bandwagon Applicants</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      @import url("style.css");
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <ul>
+        <li><a href="/">Application Form</a></li>
+        <li><a href="/view-applicants.html">View All Applicants</a></li>
+      </ul>
+    </nav>
+
+    <h1>NFL BANDWAGON APPLICANTS</h1>
+
+    <!-- This form POSTS to your new server-side remove-all route -->
+    <form class="remove-form" action="/removeAllApplications" method="POST">
+      <button type="submit" class="remove-button">
+        Remove All Applications
+      </button>
+    </form>
+
+    <!-- The server will inject the <table> here -->
+    <!-- When you switch to dynamic server rendering, this file can be removed -->
+    <p style="text-align:center;">
+      Loading applicants… If this page doesn’t refresh automatically,
+      <a href="/view-applicants.html">click here</a>.
+    </p>
   </body>
 </html>
