@@ -1,7 +1,6 @@
 # Ignore node dependencies
 node_modules/
 
-
 # Logs
 *.log
 
