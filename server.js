@@ -1,31 +1,37 @@
 const path = require("path");
 const express = require('express');
+const router = express.Router();  // Create a router
 const app = express();
-//change the port to whatever 
-const PORT = process.argv[2] || 3002;
+const PORT = process.argv[2] ||  3001;
 
+// For the .env file
 require("dotenv").config({
     path: path.resolve(__dirname, "credentials/.env"),
 });
 const { MongoClient, ServerApiVersion } = require("mongodb");
 
+// Set up middleware to serve static files from the project root
 app.use(express.static(__dirname));
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended:false}));
 
-const username = process.env.MONGO_DB_USERNAME;
-const password = process.env.MONGO_DB_PASSWORD;
-const dbName = process.env.MONGO_DB_NAME;
-const collectionName = process.env.MONGO_COLLECTION;
-const uri = process.env.MONGO_CONNECTION_STRING;
+// MongoDB connection variables from your .env file
+const dbName = process.env.MONGO_DB_NAME || "BandwagonApps";
+const collectionName = process.env.MONGO_COLLECTION || "applications";
+const uri = process.env.MONGO_CONNECTION_STRING || "mongodb+srv://devp2303:Radhasoami13@cluster0.mypnnnc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 const client = new MongoClient(uri, { serverApi: ServerApiVersion.v1 });
 
-app.get("/", (req, res) => {
+// Define routes using the Express Router
+
+// Home route - serve the HTML form
+router.get("/", (req, res) => {
     console.log("Serving Application.html");
     res.sendFile(path.join(__dirname, "Application.html"));
 });
 
-app.post("/submitApplication", async (req, res) => {
+// Form submission route
+router.post("/submitApplication", async (req, res) => {
+    console.log("Form submission received:", req.body);
     const { 
         name, 
         age, 
@@ -64,7 +70,7 @@ app.post("/submitApplication", async (req, res) => {
         };
         
         console.log("Inserting document:", fan);
-
+        
         // Insert the document into MongoDB
         const result = await collection.insertOne(fan);
         console.log("Document inserted with ID:", result.insertedId);
@@ -116,6 +122,66 @@ app.post("/submitApplication", async (req, res) => {
         console.log("MongoDB connection closed");
     }
 });
+
+// Serve the view-applicants.html file
+router.get("/view-applicants.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "view-applicants.html"));
+});
+
+// API endpoint to get all applications
+router.get("/api/applications", async (req, res) => {
+    try {
+        await client.connect();
+        const database = client.db(dbName);
+        const collection = database.collection(collectionName);
+        
+        const applications = await collection.find({}).toArray();
+        res.json(applications);
+    } catch (e) {
+        console.error("Database error:", e);
+        res.status(500).json({ error: "Failed to retrieve applications" });
+    } finally {
+        await client.close();
+    }
+});
+
+// API endpoint to remove all applications
+router.delete("/api/applications/removeAll", async (req, res) => {
+    try {
+      await client.connect();
+      const database = client.db(dbName);
+      const collection = database.collection(collectionName);
+      
+      // Count documents before deletion to return in response
+      const count = await collection.countDocuments({});
+      
+      // Delete all documents
+      const result = await collection.deleteMany({});
+      
+      res.json({ 
+        success: true, 
+        message: "All applications removed successfully", 
+        count: count 
+      });
+    } catch (e) {
+      console.error("Database error:", e);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to remove applications" 
+      });
+    } finally {
+      await client.close();
+    }
+  });
+
+  
+// Add a simple status endpoint
+router.get("/status", (req, res) => {
+    res.json({ status: "Server is running", time: new Date() });
+});
+
+// Mount the router on the app
+app.use('/', router);
 
 // Start server
 const server = app.listen(PORT, () => {

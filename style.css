@@ -87,3 +87,121 @@ textarea {
 .navbar li a:hover {
     color: red;
 }
+
+/* New styles for the Remove All button and confirmation dialog */
+.remove-button {
+    background-color: #D50A0A; /* NFL red */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Oswald', sans-serif;
+    font-weight: bold;
+    margin-bottom: 20px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .remove-button:hover {
+    background-color: #a30808;
+  }
+  
+  .confirm-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }
+  
+  .confirm-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 5px;
+    text-align: center;
+    max-width: 400px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+  
+  .confirm-content h2 {
+    color: #013369;
+    margin-top: 0;
+  }
+  
+  .confirm-buttons {
+    margin-top: 20px;
+  }
+  
+  .confirm-buttons button {
+    padding: 8px 20px;
+    margin: 0 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Oswald', sans-serif;
+    transition: background-color 0.3s ease;
+  }
+  
+  .confirm-yes {
+    background-color: #D50A0A;
+    color: white;
+  }
+  
+  .confirm-yes:hover {
+    background-color: #a30808;
+  }
+  
+  .confirm-no {
+    background-color: #013369;
+    color: white;
+  }
+  
+  .confirm-no:hover {
+    background-color: #002347;
+  }
+  
+  /* Table styling for applicants table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: white;
+  }
+  
+  th, td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+  }
+  
+  th {
+    background-color: #013369; /* NFL blue */
+    color: white;
+    font-weight: bold;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  tr:hover {
+    background-color: #f1f1f1;
+  }
+  
+  /* General utility classes */
+  .text-center {
+    text-align: center;
+  }
+  
+  .mt-20 {
+    margin-top: 20px;
+  }
+  
+  .mb-20 {
+    margin-bottom: 20px;
+  }
