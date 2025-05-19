@@ -461,12 +461,11 @@ router.post("/submitApplication", async (req, res) => {
    }
 });
 
-// Serve the view-applicants.html file
-router.get("/view-applicants.html", async (req, res) => {
+router.get("/render-applicants-table", async (req, res) => {
     try {
         await client.connect();
-        const database = client.db(dbName);
-        const collection = database.collection(collectionName);
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
         const applicants = await collection.find({}).toArray();
 
         const tableRows = applicants.map(app => {
@@ -497,63 +496,33 @@ router.get("/view-applicants.html", async (req, res) => {
             `;
         }).join("");
 
-        const tableContent = applicants.length === 0 
-            ? `<p class="text-center">No applicants found in the database.</p>` 
-            : `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th><th>Age</th><th>Last Team</th><th>New Team</th>
-                            <th>Reason</th><th>First-Timer</th><th>Commitment</th><th>Backup Team</th>
-                        </tr>
-                    </thead>
-                    <tbody>${tableRows}</tbody>
-                </table>
-            `;
+        if (applicants.length === 0) {
+            return res.send(`<p class="text-center">No applicants found in the database.</p>`);
+        }
 
-        res.send(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>View Bandwagon Applicants</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
-  <style>@import url("style.css");</style>
-</head>
-<body>
-  <nav class="navbar">
-    <ul>
-      <li><a href="Application.html">Application Form</a></li>
-      <li><a href="view-applicants.html">View All Applicants</a></li>
-    </ul>
-  </nav>
+        const htmlTable = `
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th><th>Age</th><th>Last Team</th><th>New Team</th>
+                  <th>Reason</th><th>First-Timer</th><th>Commitment</th><th>Backup Team</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows}
+              </tbody>
+            </table>
+        `;
 
-  <div class="header">
-    <img src="https://1000logos.net/wp-content/uploads/2017/05/NFL-logo.png" alt="NFL Logo" width="200px" />
-    <h1>NFL BANDWAGON APPLICANTS</h1>
-  </div>
-
-  <div id="applicants-table" style="width: 800px; margin: 0 auto; padding: 20px; border: solid;">
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-      <form method="POST" action="/removeAllApplicants" onsubmit="return confirm('Are you sure you want to remove ALL applications?');">
-        <button class="remove-button">Remove All Applications</button>
-      </form>
-    </div>
-    ${tableContent}
-  </div>
-</body>
-</html>
-        `);
+        res.send(htmlTable);
     } catch (e) {
-        console.error("Error rendering applicants:", e);
-        res.status(500).send("Failed to load applicants page.");
+        console.error("Error rendering table:", e);
+        res.status(500).send("<p>Error loading applicants table.</p>");
     } finally {
         await client.close();
     }
 });
+
 
 // API endpoint to get all applications
 router.get("/api/applications", async (req, res) => {
