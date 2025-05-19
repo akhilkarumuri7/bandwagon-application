@@ -461,68 +461,10 @@ router.post("/submitApplication", async (req, res) => {
    }
 });
 
-router.get("/render-applicants-table", async (req, res) => {
-    try {
-        await client.connect();
-        const db = client.db(dbName);
-        const collection = db.collection(collectionName);
-        const applicants = await collection.find({}).toArray();
-
-        const tableRows = applicants.map(app => {
-            const reason = {
-                A: "Player Transfer",
-                B: "Team Became Unpopular",
-                C: "Team didn't make the Playoffs"
-            }[app.reasonForTransfer] || app.reasonForTransfer;
-
-            const commitment = {
-                A: "One Season",
-                B: "Length of Player's Contract",
-                C: "When Team Loses The Playoffs",
-                D: "Not Sure (Unstable)"
-            }[app.lengthOfCommitment] || app.lengthOfCommitment;
-
-            return `
-                <tr>
-                    <td>${app.name}</td>
-                    <td>${app.age}</td>
-                    <td>${app.lastTeam}</td>
-                    <td>${app.newTeam}</td>
-                    <td>${reason}</td>
-                    <td>${app.firstTimeBandWagoner}</td>
-                    <td>${commitment}</td>
-                    <td>${app.backupTeam}</td>
-                </tr>
-            `;
-        }).join("");
-
-        if (applicants.length === 0) {
-            return res.send(`<p class="text-center">No applicants found in the database.</p>`);
-        }
-
-        const htmlTable = `
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th><th>Age</th><th>Last Team</th><th>New Team</th>
-                  <th>Reason</th><th>First-Timer</th><th>Commitment</th><th>Backup Team</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${tableRows}
-              </tbody>
-            </table>
-        `;
-
-        res.send(htmlTable);
-    } catch (e) {
-        console.error("Error rendering table:", e);
-        res.status(500).send("<p>Error loading applicants table.</p>");
-    } finally {
-        await client.close();
-    }
+// Serve the view-applicants.html file
+router.get("/view-applicants.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "view-applicants.html"));
 });
-
 
 // API endpoint to get all applications
 router.get("/api/applications", async (req, res) => {
@@ -540,22 +482,6 @@ router.get("/api/applications", async (req, res) => {
         await client.close();
     }
 });
-
-router.post("/removeAllApplicants", async (req, res) => {
-    try {
-        await client.connect();
-        const database = client.db(dbName);
-        const collection = database.collection(collectionName);
-        await collection.deleteMany({});
-        res.redirect("/view-applicants.html");
-    } catch (e) {
-        console.error("Failed to remove applicants:", e);
-        res.status(500).send("Failed to remove applicants.");
-    } finally {
-        await client.close();
-    }
-});
-
 
 // API endpoint to remove all applications
 router.delete("/api/applications/removeAll", async (req, res) => {
