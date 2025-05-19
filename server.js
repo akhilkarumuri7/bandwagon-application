@@ -1,15 +1,13 @@
 const path = require("path");
 const express = require('express');
-const app = express();
 const axios = require('axios');
-//change the port to whatever 
-const PORT = process.argv[2] || 3002;
+const app = express();
+const PORT = process.argv[2] ||  3001;
 
 require("dotenv").config({
     path: path.resolve(__dirname, "credentials/.env"),
 });
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const fetch = require('node-fetch');
 
 app.use(express.static(__dirname));
 const bodyParser = require("body-parser");
@@ -22,10 +20,13 @@ const collectionName = process.env.MONGO_COLLECTION;
 const uri = process.env.MONGO_CONNECTION_STRING;
 const client = new MongoClient(uri, { serverApi: ServerApiVersion.v1 });
 
-// Create a router for our endpoints
 const router = express.Router();
 
-// Function to fetch team info from the TheSportsDB API
+router.get("/", (req, res) => {
+    console.log("Serving Application.html");
+    res.sendFile(path.join(__dirname, "Application.html"));
+});
+
 async function getTeamInfo(teamName) {
     try {
         const apiKey = process.env.SPORTS_API || "3"; // Using your API key from .env
@@ -51,7 +52,7 @@ async function getTeamInfo(teamName) {
             
             // Simple test image to verify image loading works
             const testImageUrl = "https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/National_Football_League_logo.svg/1200px-National_Football_League_logo.svg.png";
-            
+
             return {
                 name: team.strTeam,
                 logo: testImageUrl, // Use a guaranteed working image for testing
@@ -98,115 +99,10 @@ function getMockTeamInfo(teamName) {
     };
 }
 
-// Route handlers using the router
-router.get("/", (req, res) => {
-    console.log("Serving Application.html");
-    res.sendFile(path.join(__dirname, "Application.html"));
-});
 
-router.get("/teamDatabase", async (req, res) => {
-    try {
-        await client.connect();
-        console.log("Connected to MongoDB");
-        const database = client.db(dbName);
-        const collection = database.collection(collectionName);
-        
-        // Get all applications from the database
-        const applications = await collection.find({}).toArray();
-        
-        res.send(`
-            <html>
-            <head>
-                <title>Bandwagon Fans Database</title>
-                <link rel="preconnect" href="https://fonts.googleapis.com">
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-                <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
-                <style>
-                    body {
-                        background-color: #f0f2f5;
-                        color: #222;
-                        font-size: 16px;
-                        font-family: 'Oswald', sans-serif;
-                        max-width: 1200px;
-                        margin: 0 auto;
-                        padding: 20px;
-                    }
-                    h1 {
-                        color: #013369;
-                        text-align: center;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin: 20px 0;
-                    }
-                    th, td {
-                        padding: 10px;
-                        border: 1px solid #ccc;
-                        text-align: left;
-                    }
-                    th {
-                        background-color: #013369;
-                        color: white;
-                    }
-                    tr:nth-child(even) {
-                        background-color: #f2f2f2;
-                    }
-                    .header {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        margin-bottom: 20px;
-                    }
-                    a {
-                        display: inline-block;
-                        padding: 10px 15px;
-                        background-color: #013369;
-                        color: white;
-                        text-decoration: none;
-                        border-radius: 5px;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>NFL Bandwagon Fans Database</h1>
-                    <a href="/">Submit New Application</a>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Last Team</th>
-                            <th>New Team</th>
-                            <th>Reason</th>
-                            <th>Submission Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${applications.map(app => `
-                            <tr>
-                                <td>${app.name}</td>
-                                <td>${app.lastTeam}</td>
-                                <td>${app.newTeam}</td>
-                                <td>${app.reasonForTransfer}</td>
-                                <td>${new Date(app.submissionDate).toLocaleDateString()}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </body>
-            </html>
-        `);
-    } catch (e) {
-        console.error("Database error:", e);
-        res.status(500).send("Error retrieving data from the database");
-    } finally {
-        await client.close();
-    }
-});
-
+// Form submission route
 router.post("/submitApplication", async (req, res) => {
+    console.log("Form submission received:", req.body);
     const { 
         name, 
         age, 
@@ -245,256 +141,312 @@ router.post("/submitApplication", async (req, res) => {
         };
         
         console.log("Inserting document:", fan);
-
+        
         // Insert the document into MongoDB
         const result = await collection.insertOne(fan);
         console.log("Document inserted with ID:", result.insertedId);
 
-        // Get the team information from the API
-        const teamInfo = await getTeamInfo(new_team);
+       // Get the team information from the API
+       const teamInfo = await getTeamInfo(new_team);
         
-        // Create a readable reason for transfer based on the selection
-        let reasonText;
-        switch(reason) {
-            case 'A':
-                reasonText = "Player Transfer";
-                break;
-            case 'B':
-                reasonText = "Team Became Unpopular";
-                break;
-            case 'C':
-                reasonText = "Team didn't make the Playoffs";
-                break;
-            case 'D':
-                reasonText = reason_other;
-                break;
-            default:
-                reasonText = "Other";
-        }
-        
-        // Create a readable length of commitment based on the selection
-        let lengthText;
-        switch(length) {
-            case 'A':
-                lengthText = "One Season";
-                break;
-            case 'B':
-                lengthText = "Length of Player's Contract";
-                break;
-            case 'C':
-                lengthText = "When Team Loses The Playoffs";
-                break;
-            case 'D':
-                lengthText = "Not Sure (Unstable)";
-                break;
-            default:
-                lengthText = "Unspecified";
-        }
+       // Create a readable reason for transfer based on the selection
+       let reasonText;
+       switch(reason) {
+           case 'A':
+               reasonText = "Player Transfer";
+               break;
+           case 'B':
+               reasonText = "Team Became Unpopular";
+               break;
+           case 'C':
+               reasonText = "Team didn't make the Playoffs";
+               break;
+           case 'D':
+               reasonText = reason_other;
+               break;
+           default:
+               reasonText = "Other";
+       }
+       
+       // Create a readable length of commitment based on the selection
+       let lengthText;
+       switch(length) {
+           case 'A':
+               lengthText = "One Season";
+               break;
+           case 'B':
+               lengthText = "Length of Player's Contract";
+               break;
+           case 'C':
+               lengthText = "When Team Loses The Playoffs";
+               break;
+           case 'D':
+               lengthText = "Not Sure (Unstable)";
+               break;
+           default:
+               lengthText = "Unspecified";
+       }
 
-        // Send team information to the user
-        res.send(`
-            <html>
-            <head>
-                <title>Bandwagon Transfer Approved</title>
-                <link rel="preconnect" href="https://fonts.googleapis.com">
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-                <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
-                <style>
-                    body {
-                        background-color: #f0f2f5;
-                        color: #222;
-                        font-size: 16px;
-                        font-family: 'Oswald', sans-serif;
-                        max-width: 800px;
-                        margin: 0 auto;
-                        padding: 20px;
-                        line-height: 1.6;
-                    }
-                    h1, h2, h3 {
-                        color: #013369;
-                        text-align: center;
-                        margin-top: 30px;
-                    }
-                    .success-banner {
-                        background-color: #e8f5e9;
-                        padding: 20px;
-                        border-radius: 10px;
-                        margin: 20px 0;
-                        text-align: center;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    }
-                    .team-info {
-                        background-color: #fff;
-                        border-radius: 10px;
-                        padding: 25px;
-                        margin: 20px 0;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    }
-                    .team-header {
-                        display: flex;
-                        align-items: center;
-                        margin-bottom: 20px;
-                        justify-content: center;
-                    }
-                    .team-logo {
-                        width: 120px;
-                        height: 120px;
-                        object-fit: contain;
-                        margin-right: 20px;
-                    }
-                    .team-details {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 20px;
-                        margin-top: 20px;
-                    }
-                    @media (max-width: 600px) {
-                        .team-details {
-                            grid-template-columns: 1fr;
-                        }
-                    }
-                    .detail-item {
-                        background-color: #f9f9f9;
-                        padding: 15px;
-                        border-radius: 8px;
-                        margin-bottom: 15px;
-                    }
-                    .detail-item strong {
-                        display: block;
-                        margin-bottom: 5px;
-                        color: #013369;
-                        font-weight: 600;
-                    }
-                    .team-banner {
-                        width: 100%;
-                        height: 180px;
-                        object-fit: cover;
-                        border-radius: 8px;
-                        margin: 20px 0;
-                    }
-                    .team-description {
-                        background-color: #f9f9f9;
-                        padding: 20px;
-                        border-radius: 8px;
-                        margin: 20px 0;
-                        line-height: 1.6;
-                    }
-                    .application-summary {
-                        background-color: #f9f9f9;
-                        padding: 20px;
-                        border-radius: 10px;
-                        margin-top: 30px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    }
-                    .application-summary p {
-                        margin: 8px 0;
-                        display: flex;
-                        justify-content: space-between;
-                    }
-                    .application-summary p strong {
-                        min-width: 180px;
-                    }
-                    .action-buttons {
-                        display: flex;
-                        justify-content: space-between;
-                        margin-top: 30px;
-                    }
-                    .action-button {
-                        display: inline-block;
-                        padding: 12px 25px;
-                        background-color: #013369;
-                        color: white;
-                        text-decoration: none;
-                        border-radius: 5px;
-                        text-align: center;
-                        flex: 1;
-                        margin: 0 10px;
-                        transition: background-color 0.3s;
-                        font-weight: 500;
-                    }
-                    .action-button:hover {
-                        background-color: #00204e;
-                    }
-                    .stadium-img {
-                        width: 100%;
-                        height: 150px;
-                        object-fit: cover;
-                        border-radius: 8px;
-                        margin-top: 10px;
-                    }
-                </style>
-            </head>
-            <body>
-                <h1>NFL Bandwagon Transferral</h1>
-                
-                <div class="success-banner">
-                    <h2>Application Approved!</h2>
-                    <p>Congratulations, ${name}! Your bandwagon transfer from ${last_team} to ${new_team} has been approved.</p>
-                </div>
-                
-                <div class="team-info">
-                    <h2>Welcome to Your New Team</h2>
-                    
-                    ${teamInfo.banner ? `<img src="${teamInfo.banner}" alt="${teamInfo.name} Banner" class="team-banner">` : ''}
-                    
-                    <div class="team-header">
-                        <img src="${teamInfo.logo}" alt="${teamInfo.name} Logo" class="team-logo">
-                        <div>
-                            <h2>${teamInfo.name}</h2>
-                            <p><strong>League:</strong> ${teamInfo.league}</p>
-                            <p><strong>Founded:</strong> ${teamInfo.founded}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="team-details">
-                        <div class="detail-item">
-                            <strong>Stadium:</strong>
-                            <p>${teamInfo.stadium}</p>
-                            ${teamInfo.stadiumThumb ? `<img src="${teamInfo.stadiumThumb}" alt="${teamInfo.stadium}" class="stadium-img">` : ''}
-                        </div>
-                        
-                        <div class="detail-item">
-                            <strong>Stadium Capacity:</strong>
-                            <p>${teamInfo.capacity}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="team-description">
-                        <strong>About Your New Team:</strong>
-                        <p>${teamInfo.description}</p>
-                    </div>
-                </div>
-                
-                <div class="application-summary">
-                    <h3>Your Application Summary</h3>
-                    <p><strong>Name:</strong> <span>${name}</span></p>
-                    <p><strong>Age:</strong> <span>${age}</span></p>
-                    <p><strong>Previous Team:</strong> <span>${last_team}</span></p>
-                    <p><strong>New Team:</strong> <span>${new_team}</span></p>
-                    <p><strong>Reason for Transfer:</strong> <span>${reasonText}</span></p>
-                    <p><strong>Length of Commitment:</strong> <span>${lengthText}</span></p>
-                    <p><strong>Backup Team:</strong> <span>${backup_team}</span></p>
-                    <p><strong>Championship Dependent:</strong> <span>${championship_dep}</span></p>
-                    <p><strong>Application Date:</strong> <span>${new Date().toLocaleDateString()}</span></p>
-                </div>
-                
-                <div class="action-buttons">
-                    <a href="/" class="action-button">Submit Another Application</a>
-                    <a href="/teamDatabase" class="action-button">View All Fans</a>
-                </div>
-            </body>
-            </html>
-        `);
+       // Send team information to the user
+       res.send(`
+           <html>
+           <head>
+               <title>Bandwagon Transfer Approved</title>
+               <link rel="preconnect" href="https://fonts.googleapis.com">
+               <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+               <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
+               <style>
+                   body {
+                       background-color: #f0f2f5;
+                       color: #222;
+                       font-size: 16px;
+                       font-family: 'Oswald', sans-serif;
+                       max-width: 800px;
+                       margin: 0 auto;
+                       padding: 20px;
+                       line-height: 1.6;
+                   }
+                   h1, h2, h3 {
+                       color: #013369;
+                       text-align: center;
+                       margin-top: 30px;
+                   }
+                   .success-banner {
+                       background-color: #e8f5e9;
+                       padding: 20px;
+                       border-radius: 10px;
+                       margin: 20px 0;
+                       text-align: center;
+                       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                   }
+                   .team-info {
+                       background-color: #fff;
+                       border-radius: 10px;
+                       padding: 25px;
+                       margin: 20px 0;
+                       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                   }
+                   .team-header {
+                       display: flex;
+                       align-items: center;
+                       margin-bottom: 20px;
+                       justify-content: center;
+                   }
+                   .team-logo {
+                       width: 120px;
+                       height: 120px;
+                       object-fit: contain;
+                       margin-right: 20px;
+                   }
+                   .team-details {
+                       display: grid;
+                       grid-template-columns: 1fr 1fr;
+                       gap: 20px;
+                       margin-top: 20px;
+                   }
+                   @media (max-width: 600px) {
+                       .team-details {
+                           grid-template-columns: 1fr;
+                       }
+                   }
+                   .detail-item {
+                       background-color: #f9f9f9;
+                       padding: 15px;
+                       border-radius: 8px;
+                       margin-bottom: 15px;
+                   }
+                   .detail-item strong {
+                       display: block;
+                       margin-bottom: 5px;
+                       color: #013369;
+                       font-weight: 600;
+                   }
+                   .team-banner {
+                       width: 100%;
+                       height: 180px;
+                       object-fit: cover;
+                       border-radius: 8px;
+                       margin: 20px 0;
+                   }
+                   .team-description {
+                       background-color: #f9f9f9;
+                       padding: 20px;
+                       border-radius: 8px;
+                       margin: 20px 0;
+                       line-height: 1.6;
+                   }
+                   .application-summary {
+                       background-color: #f9f9f9;
+                       padding: 20px;
+                       border-radius: 10px;
+                       margin-top: 30px;
+                       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                   }
+                   .application-summary p {
+                       margin: 8px 0;
+                       display: flex;
+                       justify-content: space-between;
+                   }
+                   .application-summary p strong {
+                       min-width: 180px;
+                   }
+                   .action-buttons {
+                       display: flex;
+                       justify-content: space-between;
+                       margin-top: 30px;
+                   }
+                   .action-button {
+                       display: inline-block;
+                       padding: 12px 25px;
+                       background-color: #013369;
+                       color: white;
+                       text-decoration: none;
+                       border-radius: 5px;
+                       text-align: center;
+                       flex: 1;
+                       margin: 0 10px;
+                       transition: background-color 0.3s;
+                       font-weight: 500;
+                   }
+                   .action-button:hover {
+                       background-color: #00204e;
+                   }
+                   .stadium-img {
+                       width: 100%;
+                       height: 150px;
+                       object-fit: cover;
+                       border-radius: 8px;
+                       margin-top: 10px;
+                   }
+               </style>
+           </head>
+           <body>
+               <h1>NFL Bandwagon Transferral</h1>
+               
+               <div class="success-banner">
+                   <h2>Application Approved!</h2>
+                   <p>Congratulations, ${name}! Your bandwagon transfer from ${last_team} to ${new_team} has been approved.</p>
+               </div>
+               
+               <div class="team-info">
+                   <h2>Welcome to Your New Team</h2>
+                   
+                   ${teamInfo.banner ? `<img src="${teamInfo.banner}" alt="${teamInfo.name} Banner" class="team-banner">` : ''}
+                   
+                   <div class="team-header">
+                       <img src="${teamInfo.logo}" alt="${teamInfo.name} Logo" class="team-logo">
+                       <div>
+                           <h2>${teamInfo.name}</h2>
+                           <p><strong>League:</strong> ${teamInfo.league}</p>
+                           <p><strong>Founded:</strong> ${teamInfo.founded}</p>
+                       </div>
+                   </div>
+                   
+                   <div class="team-details">
+                       <div class="detail-item">
+                           <strong>Stadium:</strong>
+                           <p>${teamInfo.stadium}</p>
+                           ${teamInfo.stadiumThumb ? `<img src="${teamInfo.stadiumThumb}" alt="${teamInfo.stadium}" class="stadium-img">` : ''}
+                       </div>
+                       
+                       <div class="detail-item">
+                           <strong>Stadium Capacity:</strong>
+                           <p>${teamInfo.capacity}</p>
+                       </div>
+                   </div>
+                   
+                   <div class="team-description">
+                       <strong>About Your New Team:</strong>
+                       <p>${teamInfo.description}</p>
+                   </div>
+               </div>
+               
+               <div class="application-summary">
+                   <h3>Your Application Summary</h3>
+                   <p><strong>Name:</strong> <span>${name}</span></p>
+                   <p><strong>Age:</strong> <span>${age}</span></p>
+                   <p><strong>Previous Team:</strong> <span>${last_team}</span></p>
+                   <p><strong>New Team:</strong> <span>${new_team}</span></p>
+                   <p><strong>Reason for Transfer:</strong> <span>${reasonText}</span></p>
+                   <p><strong>Length of Commitment:</strong> <span>${lengthText}</span></p>
+                   <p><strong>Backup Team:</strong> <span>${backup_team}</span></p>
+                   <p><strong>Championship Dependent:</strong> <span>${championship_dep}</span></p>
+                   <p><strong>Application Date:</strong> <span>${new Date().toLocaleDateString()}</span></p>
+               </div>
+               
+               <div class="action-buttons">
+                   <a href="/" class="action-button">Submit Another Application</a>
+               </div>
+           </body>
+           </html>
+       `);
+   } catch (e) {
+       console.error("Database error:", e);
+       res.status(500).send("There was an error processing your application. Please try again.");
+   } finally {
+       await client.close();
+       console.log("MongoDB connection closed");
+   }
+});
+
+// Serve the view-applicants.html file
+router.get("/view-applicants.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "view-applicants.html"));
+});
+
+// API endpoint to get all applications
+router.get("/api/applications", async (req, res) => {
+    try {
+        await client.connect();
+        const database = client.db(dbName);
+        const collection = database.collection(collectionName);
+        
+        const applications = await collection.find({}).toArray();
+        res.json(applications);
     } catch (e) {
         console.error("Database error:", e);
-        res.status(500).send("There was an error processing your application. Please try again.");
+        res.status(500).json({ error: "Failed to retrieve applications" });
     } finally {
         await client.close();
-        console.log("MongoDB connection closed");
     }
 });
 
-// Use the router
+// API endpoint to remove all applications
+router.delete("/api/applications/removeAll", async (req, res) => {
+    try {
+      await client.connect();
+      const database = client.db(dbName);
+      const collection = database.collection(collectionName);
+      
+      // Count documents before deletion to return in response
+      const count = await collection.countDocuments({});
+      
+      // Delete all documents
+      const result = await collection.deleteMany({});
+      
+      res.json({ 
+        success: true, 
+        message: "All applications removed successfully", 
+        count: count 
+      });
+    } catch (e) {
+      console.error("Database error:", e);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to remove applications" 
+      });
+    } finally {
+      await client.close();
+    }
+  });
+
+  
+// Add a simple status endpoint
+router.get("/status", (req, res) => {
+    res.json({ status: "Server is running", time: new Date() });
+});
+
+// Mount the router on the app
 app.use('/', router);
 
 // Start server

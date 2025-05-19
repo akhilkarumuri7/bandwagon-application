@@ -3,7 +3,7 @@ CMSC335 Final Project
 
 Who Submitted the Project in the Submit Server - Name and directory id of the group member that uploaded the application to the submit server.
 
-Group Members - Akhil Karumuri (akarum), Dev Patel (dpatel)
+Group Members - Akhil Karumuri (akarum), Dev Patel (dpatel), Adnan Kabir 
 
 App Description - A humorous HTML form titled the "Official NFL Bandwagon Transferral Form," allowing users to enter in their information to switch the NFL team that they support. This information will be stored in MongoDB and the user will recieve information about their new team retrieved from the API upon submission. 
 
