@@ -2,11 +2,12 @@ const path = require("path");
 const express = require('express');
 const axios = require('axios');
 const app = express();
-const PORT = process.argv[2] ||  3001;
+const PORT = Number(process.env.PORT); 
 
-require("dotenv").config({
-    path: path.resolve(__dirname, "credentials/.env"),
-});
+// require("dotenv").config({
+//     path: path.resolve(__dirname, "credentials/.env"),
+// });
+
 const { MongoClient, ServerApiVersion } = require("mongodb");
 
 app.use(express.static(__dirname));
@@ -521,18 +522,7 @@ router.get("/status", (req, res) => {
 app.use('/', router);
 
 // Start server
-const server = app.listen(PORT, () => {
-    console.log(`Web server started and running at http://localhost:${PORT}`);
-    console.log("Type 'stop' to shutdown server: ");
+app.listen(PORT, () => {
+    console.log(`listening on port ${PORT}`);
 });
 
-// Stop when stop is entered 
-process.stdin.on("data", (data) => {
-    const input = data.toString().trim().toLowerCase();
-    if (input === "stop") {
-        console.log("Shutting down the server");
-        server.close(() => {
-            process.exit(0);
-        });
-    }
-});
